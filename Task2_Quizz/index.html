@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>QuizMaster - Gamified</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .hidden-view { display: none !important; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Glassmorphism for Bottom Nav */
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(226, 232, 240, 0.8);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col pb-24">
+
+    <header id="main-header" class="fixed top-0 w-full z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 h-16 flex justify-between items-center transition-transform duration-300">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-lg">Q</div>
+            <span class="font-extrabold text-xl tracking-tight text-slate-800">QuizMaster</span>
+        </div>
+        
+        <div id="header-stats" class="hidden flex items-center gap-3 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+            <i class="fas fa-trophy text-yellow-500"></i>
+            <span class="text-xs font-bold text-slate-600 uppercase" id="header-rank">Novice</span>
+            <span class="text-xs font-bold text-indigo-600" id="header-xp">0 XP</span>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 pt-20 flex-grow">
+
+        <div id="auth-view" class="hidden-view mt-10 max-w-sm mx-auto">
+            <div class="text-center mb-10">
+                <div class="w-20 h-20 bg-indigo-600 rounded-3xl mx-auto flex items-center justify-center text-white text-4xl shadow-xl shadow-indigo-200 mb-6 rotate-3">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Level Up Your Brain</h1>
+                <p class="text-slate-500">Join the gamified learning revolution.</p>
+            </div>
+            
+            <form onsubmit="app.handleAuth(event)" class="space-y-4 bg-white p-6 rounded-3xl shadow-lg border border-slate-100">
+                <input type="text" id="username" class="w-full px-5 py-4 rounded-xl bg-slate-50 border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none font-semibold transition" placeholder="Username" required>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl transition shadow-lg shadow-indigo-500/30 active:scale-95">
+                    Start Playing
+                </button>
+            </form>
+        </div>
+
+        <div id="home-view" class="hidden-view fade-in">
+            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl p-6 text-white shadow-xl shadow-indigo-200 mb-8 relative overflow-hidden">
+                <div class="absolute -right-10 -top-10 opacity-10 text-9xl"><i class="fas fa-medal"></i></div>
+                <div class="relative z-10">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-indigo-200 text-xs font-bold uppercase tracking-wider mb-1">Current Rank</p>
+                            <h2 class="text-3xl font-black" id="dash-rank">Novice</h2>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-2xl font-bold" id="dash-xp">0</span> <span class="text-sm font-medium opacity-80">XP</span>
+                        </div>
+                    </div>
+                    <div class="w-full bg-black/20 rounded-full h-2 mb-2">
+                        <div id="dash-progress" class="bg-yellow-400 h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                    </div>
+                    <p class="text-xs text-indigo-100 mt-2" id="dash-next-rank">500 XP to next rank</p>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-end mb-4">
+                <h3 class="text-lg font-bold text-slate-800">Trending Now 🔥</h3>
+            </div>
+            
+            <div class="flex gap-4 overflow-x-auto no-scrollbar mb-8 pb-2">
+                <div onclick="app.filterCategory('Engineering')" class="min-w-[260px] bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition cursor-pointer">
+                    <div class="flex justify-between mb-8">
+                        <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">ENGINEERING</span>
+                        <i class="fas fa-atom text-blue-500 text-xl"></i>
+                    </div>
+                    <h4 class="text-xl font-bold text-slate-900 mb-1">JEE Mains Special</h4>
+                    <p class="text-sm text-slate-500">Physics & Maths Sets</p>
+                </div>
+
+                <div onclick="app.filterCategory('Medical')" class="min-w-[260px] bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition cursor-pointer">
+                    <div class="flex justify-between mb-8">
+                        <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold">MEDICAL</span>
+                        <i class="fas fa-heartbeat text-red-500 text-xl"></i>
+                    </div>
+                    <h4 class="text-xl font-bold text-slate-900 mb-1">NEET Biology</h4>
+                    <p class="text-sm text-slate-500">Anatomy & Genetics</p>
+                </div>
+
+                <div onclick="app.filterCategory('UPSC')" class="min-w-[260px] bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition cursor-pointer">
+                    <div class="flex justify-between mb-8">
+                        <span class="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold">CIVIL SERVICES</span>
+                        <i class="fas fa-landmark text-orange-500 text-xl"></i>
+                    </div>
+                    <h4 class="text-xl font-bold text-slate-900 mb-1">UPSC Prelims</h4>
+                    <p class="text-sm text-slate-500">Polity & History</p>
+                </div>
+            </div>
+
+            <h3 class="text-lg font-bold text-slate-800 mb-4">Recommended For You</h3>
+            <div id="home-quiz-list" class="space-y-3">
+                </div>
+        </div>
+
+        <div id="explore-view" class="hidden-view fade-in">
+            <h2 class="text-2xl font-bold mb-6">Explore Library</h2>
+            
+            <div class="relative mb-6">
+                <i class="fas fa-search absolute left-4 top-4 text-slate-400"></i>
+                <input type="text" id="search-bar" onkeyup="app.renderExplore()" class="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Search physics, history...">
+            </div>
+
+            <div class="flex flex-wrap gap-2 mb-6" id="cat-filters">
+                <button onclick="app.filterCategory('All')" id="btn-All" class="cat-btn px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-bold transition">All</button>
+                <button onclick="app.filterCategory('Medical')" id="btn-Medical" class="cat-btn px-4 py-2 bg-white border text-slate-600 rounded-lg text-sm font-bold transition">Medical</button>
+                <button onclick="app.filterCategory('Engineering')" id="btn-Engineering" class="cat-btn px-4 py-2 bg-white border text-slate-600 rounded-lg text-sm font-bold transition">Engineering</button>
+                <button onclick="app.filterCategory('UPSC')" id="btn-UPSC" class="cat-btn px-4 py-2 bg-white border text-slate-600 rounded-lg text-sm font-bold transition">UPSC</button>
+            </div>
+
+            <div id="explore-grid" class="grid grid-cols-1 gap-4">
+                </div>
+        </div>
+
+        <div id="create-view" class="hidden-view fade-in">
+            <h2 class="text-2xl font-bold mb-6">Create Challenge</h2>
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                <input type="text" id="new-quiz-title" class="w-full text-lg font-bold mb-4 border-b-2 border-slate-100 pb-2 focus:border-indigo-500 outline-none" placeholder="Give your quiz a name...">
+                
+                <select id="new-quiz-cat" class="w-full mb-6 text-sm text-slate-500 bg-slate-50 p-2 rounded-lg">
+                    <option value="General">General Category</option>
+                    <option value="Medical">Medical</option>
+                    <option value="Engineering">Engineering</option>
+                    <option value="UPSC">UPSC</option>
+                </select>
+
+                <div id="questions-container" class="space-y-6 mb-6"></div>
+
+                <button onclick="app.addQuestionUI()" class="w-full py-3 border-2 border-dashed border-slate-300 rounded-xl text-slate-400 font-bold hover:border-indigo-500 hover:text-indigo-500 transition mb-4">
+                    + Add Question
+                </button>
+
+                <button onclick="app.saveQuiz()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-500/30">
+                    Publish Quiz
+                </button>
+            </div>
+        </div>
+
+        <div id="profile-view" class="hidden-view fade-in text-center pt-8">
+            <div class="w-24 h-24 bg-slate-200 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl overflow-hidden border-4 border-white shadow-lg">
+                👨‍🎓
+            </div>
+            <h2 class="text-2xl font-bold text-slate-900" id="profile-name">User</h2>
+            <p class="text-indigo-600 font-bold mb-8" id="profile-rank">Novice</p>
+
+            <div class="grid grid-cols-2 gap-4 max-w-sm mx-auto mb-8">
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                    <div class="text-3xl font-black text-slate-800" id="profile-xp">0</div>
+                    <div class="text-xs font-bold text-slate-400 uppercase">Total XP</div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                    <div class="text-3xl font-black text-slate-800" id="profile-games">0</div>
+                    <div class="text-xs font-bold text-slate-400 uppercase">Quizzes Played</div>
+                </div>
+            </div>
+
+            <button onclick="app.logout()" class="text-red-500 font-bold bg-red-50 px-8 py-3 rounded-xl hover:bg-red-100 transition">
+                Log Out
+            </button>
+        </div>
+
+        <div id="play-view" class="hidden-view fixed inset-0 z-50 bg-slate-50 flex flex-col">
+            <div class="px-4 py-4 flex justify-between items-center">
+                <button onclick="app.navigate('home')" class="text-slate-400 hover:text-slate-800"><i class="fas fa-times text-xl"></i></button>
+                <div class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold" id="play-cat-badge">CAT</div>
+            </div>
+            
+            <div class="flex-grow flex flex-col justify-center px-6 max-w-2xl mx-auto w-full">
+                <div class="mb-6">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Question <span id="q-current">1</span>/<span id="q-total">10</span></span>
+                    <div class="h-1.5 bg-slate-200 rounded-full mt-2 overflow-hidden">
+                        <div id="play-progress" class="h-full bg-indigo-600 transition-all duration-300" style="width: 10%"></div>
+                    </div>
+                </div>
+
+                <h2 id="q-text" class="text-2xl font-bold text-slate-900 mb-8 leading-snug">Question goes here?</h2>
+
+                <div id="opt-container" class="space-y-3">
+                    </div>
+            </div>
+        </div>
+
+        <div id="result-view" class="hidden-view fixed inset-0 z-50 bg-white flex flex-col items-center justify-center p-6 text-center">
+            <div class="mb-6 text-6xl animate-bounce">🎉</div>
+            <h2 class="text-3xl font-black text-slate-900 mb-2">Quiz Complete!</h2>
+            <p class="text-slate-500 mb-8">You are getting smarter every day.</p>
+
+            <div class="bg-indigo-50 p-6 rounded-3xl mb-8 w-full max-w-sm border border-indigo-100">
+                <p class="text-sm font-bold text-indigo-400 uppercase mb-1">XP Earned</p>
+                <p class="text-5xl font-black text-indigo-600" id="res-xp">+120</p>
+                <p class="text-slate-500 text-sm mt-2">Score: <span id="res-score">8/10</span></p>
+            </div>
+
+            <button onclick="app.navigate('home')" class="w-full max-w-sm bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg">Back to Home</button>
+        </div>
+
+    </main>
+
+    <nav id="bottom-nav" class="fixed bottom-0 w-full glass-nav z-40 hidden pb-safe">
+        <div class="flex justify-around items-center h-16">
+            <button onclick="app.navigate('home')" class="nav-btn text-indigo-600 flex flex-col items-center gap-1 w-1/4">
+                <i class="fas fa-home text-xl"></i>
+                <span class="text-[10px] font-bold">Home</span>
+            </button>
+            <button onclick="app.navigate('explore')" class="nav-btn text-slate-400 flex flex-col items-center gap-1 w-1/4 hover:text-indigo-500">
+                <i class="fas fa-compass text-xl"></i>
+                <span class="text-[10px] font-bold">Explore</span>
+            </button>
+            <button onclick="app.navigate('create')" class="nav-btn text-slate-400 flex flex-col items-center gap-1 w-1/4 hover:text-indigo-500">
+                <i class="fas fa-plus-circle text-xl"></i>
+                <span class="text-[10px] font-bold">Create</span>
+            </button>
+            <button onclick="app.navigate('profile')" class="nav-btn text-slate-400 flex flex-col items-center gap-1 w-1/4 hover:text-indigo-500">
+                <i class="fas fa-user text-xl"></i>
+                <span class="text-[10px] font-bold">Profile</span>
+            </button>
+        </div>
+    </nav>
+
+    <script>
+        const app = {
+            data: {
+                quizzes: [],
+                user: null, // { username, xp, gamesPlayed }
+                activeQuiz: null,
+                qIndex: 0,
+                score: 0,
+                currentCategory: 'All' // FIXED: Added state to track category
+            },
+
+            ranks: [
+                { title: "Novice", min: 0 },
+                { title: "Apprentice", min: 200 },
+                { title: "Specialist", min: 600 },
+                { title: "Master", min: 1200 },
+                { title: "Legend", min: 2500 }
+            ],
+
+            init() {
+                // Load Data - Using Key v66 to ensure fresh load
+                const qData = localStorage.getItem('qm_v66_data');
+                const uData = localStorage.getItem('qm_v66_user');
+
+                if (qData) this.data.quizzes = JSON.parse(qData);
+                else this.seedData();
+
+                if (uData) {
+                    this.data.user = JSON.parse(uData);
+                    this.navigate('home');
+                } else {
+                    this.navigate('auth');
+                }
+            },
+
+            seedData() {
+                const create = (cat, title, q) => ({ id: Date.now() + Math.random(), category: cat, title, questions: q });
+                let generatedQuizzes = [];
+
+                // 1. HSC MAHARASHTRA
+                const hscPhy = [
+                    {text: "SI Unit of Surface Tension?", options:["N/m","J/m","N/m^2","kg/m"], correct:0},
+                    {text: "Moment of Inertia of disc?", options:["MR^2","1/2 MR^2","2/5 MR^2","MR^2/12"], correct:1},
+                    {text: "First Law of Thermodynamics?", options:["Energy Conservation","Mass Conservation","Momentum","None"], correct:0},
+                    {text: "Dimension of Force?", options:["MLT-2","MLT-1","ML2T-2","MLT"], correct:0},
+                    {text: "Kirchhoff's First Law is based on?", options:["Charge","Energy","Mass","Momentum"], correct:0}
+                ];
+                const hscChem = [
+                    {text: "General formula of Alkane?", options:["CnH2n+2","CnH2n","CnH2n-2","CnHn"], correct:0},
+                    {text: "Unit of Rate Constant for 1st order?", options:["s^-1","mol/L","L/mol","None"], correct:0},
+                    {text: "Oxidation state of K in KO2?", options:["+1","+2","+4","+3"], correct:0},
+                    {text: "Shape of Ammonia molecule?", options:["Pyramidal","Tetrahedral","Linear","Square"], correct:0},
+                    {text: "pH of pure water?", options:["7","0","14","1"], correct:0}
+                ];
+                const hscMath = [
+                    {text: "Derivative of sin(x)?", options:["cos(x)","-cos(x)","tan(x)","sec(x)"], correct:0},
+                    {text: "Integration of 1/x?", options:["log(x)","x^2","1","0"], correct:0},
+                    {text: "Value of i^2?", options:["-1","1","0","i"], correct:0},
+                    {text: "Slope of x-axis?", options:["0","1","Infinity","-1"], correct:0},
+                    {text: "Order of differential equation?", options:["Highest derivative","Degree","Power","None"], correct:0}
+                ];
+                generatedQuizzes.push(create('Engineering', 'HSC Maharashtra Physics', hscPhy));
+                generatedQuizzes.push(create('Engineering', 'HSC Maharashtra Chemistry', hscChem));
+                generatedQuizzes.push(create('Engineering', 'HSC Maharashtra Maths', hscMath));
+
+                // 2. SSC MAHARASHTRA
+                const sscHist = [
+                    {text: "First English newspaper in India?", options:["Bengal Gazette","Darpan","Kesari","Maratha"], correct:0},
+                    {text: "Author of 'Das Capital'?", options:["Marx","Hegel","Voltaire","Rousseau"], correct:0},
+                    {text: "Merger of Princely States done by?", options:["Patel","Nehru","Gandhi","Bose"], correct:0},
+                    {text: "Samyukta Maharashtra movement year?", options:["1960","1947","1950","1956"], correct:0},
+                    {text: "Cave paintings found at?", options:["Bhimbetka","Ajanta","Ellora","Elephanta"], correct:0}
+                ];
+                const sscGeo = [
+                    {text: "Capital of Brazil?", options:["Brasilia","Rio","Sao Paulo","Amazon"], correct:0},
+                    {text: "Pink City of India?", options:["Jaipur","Nagpur","Pune","Delhi"], correct:0},
+                    {text: "Largest state in India by area?", options:["Rajasthan","MP","UP","Maharashtra"], correct:0},
+                    {text: "River known as Dakshin Ganga?", options:["Godavari","Krishna","Kaveri","Narmada"], correct:0},
+                    {text: "Soil suitable for cotton?", options:["Black Soil","Red Soil","Laterite","Alluvial"], correct:0}
+                ];
+                const sscSci = [
+                    {text: "Powerhouse of cell?", options:["Mitochondria","Nucleus","DNA","RNA"], correct:0},
+                    {text: "Symbol of Gold?", options:["Au","Ag","Fe","Cu"], correct:0},
+                    {text: "Unit of Current?", options:["Ampere","Volt","Ohm","Watt"], correct:0},
+                    {text: "Formula of Water?", options:["H2O","CO2","O2","H2"], correct:0},
+                    {text: "Nearest planet to Sun?", options:["Mercury","Venus","Earth","Mars"], correct:0}
+                ];
+                generatedQuizzes.push(create('UPSC', 'SSC Maharashtra History', sscHist));
+                generatedQuizzes.push(create('UPSC', 'SSC Maharashtra Geography', sscGeo));
+                generatedQuizzes.push(create('Engineering', 'SSC Maharashtra Science', sscSci));
+
+                // 3. ENGINEERING
+                const engQ = [
+                    {text: "Unit of Force?", options:["Newton","Joule","Watt","Pascal"], correct:0},
+                    {text: "Ohm's Law?", options:["V=IR","P=VI","E=mc2","F=ma"], correct:0},
+                    {text: "Binary of 5?", options:["101","110","100","111"], correct:0},
+                    {text: "CPU stands for?", options:["Central Processing Unit","Computer P Unit","Central Power","None"], correct:0},
+                    {text: "Value of Pi?", options:["3.14","3.12","3.00","3.50"], correct:0}
+                ];
+                for(let i=1; i<=15; i++) {
+                    let mixed = [...engQ].sort(()=>Math.random()-0.5);
+                    generatedQuizzes.push(create('Engineering', `Engineering Mock Test ${i}`, mixed));
+                }
+
+                // 4. MEDICAL
+                const medQ = [
+                    {text: "Universal Donor?", options:["O-","AB+","A+","B+"], correct:0},
+                    {text: "Largest Bone?", options:["Femur","Tibia","Skull","Rib"], correct:0},
+                    {text: "Normal BP?", options:["120/80","100/60","140/90","110/70"], correct:0},
+                    {text: "Vitamin C deficiency?", options:["Scurvy","Rickets","Night Blindness","Beriberi"], correct:0},
+                    {text: "Study of tissues?", options:["Histology","Cytology","Anatomy","Biology"], correct:0}
+                ];
+                for(let i=1; i<=15; i++) {
+                     let mixed = [...medQ].sort(()=>Math.random()-0.5);
+                    generatedQuizzes.push(create('Medical', `NEET/Medical Prep ${i}`, mixed));
+                }
+
+                // 5. UPSC/MPSC
+                const gkQ = [
+                    {text: "First President of India?", options:["Rajendra Prasad","Nehru","Gandhi","Patel"], correct:0},
+                    {text: "Constitution Day?", options:["26 Nov","26 Jan","15 Aug","2 Oct"], correct:0},
+                    {text: "RBI Headquarters?", options:["Mumbai","Delhi","Kolkata","Chennai"], correct:0},
+                    {text: "National Animal?", options:["Tiger","Lion","Elephant","Peacock"], correct:0},
+                    {text: "Iron Man of India?", options:["Sardar Patel","Nehru","Bose","Gandhi"], correct:0}
+                ];
+                for(let i=1; i<=14; i++) {
+                     let mixed = [...gkQ].sort(()=>Math.random()-0.5);
+                    generatedQuizzes.push(create('UPSC', `General Knowledge Set ${i}`, mixed));
+                }
+                
+                this.data.quizzes = generatedQuizzes;
+                this.save();
+            },
+
+            save() {
+                localStorage.setItem('qm_v66_data', JSON.stringify(this.data.quizzes));
+                if(this.data.user) localStorage.setItem('qm_v66_user', JSON.stringify(this.data.user));
+            },
+
+            handleAuth(e) {
+                e.preventDefault();
+                const name = document.getElementById('username').value;
+                this.data.user = { username: name, xp: 0, gamesPlayed: 0 };
+                this.save();
+                this.navigate('home');
+            },
+
+            logout() {
+                localStorage.removeItem('qm_v66_user');
+                location.reload();
+            },
+
+            navigate(view) {
+                document.querySelectorAll('.hidden-view').forEach(el => el.classList.add('hidden-view'));
+                ['auth', 'home', 'explore', 'create', 'profile', 'play', 'result'].forEach(v => {
+                    document.getElementById(v + '-view').classList.add('hidden-view');
+                });
+
+                const target = document.getElementById(view + '-view');
+                if(target) target.classList.remove('hidden-view');
+
+                const bottomNav = document.getElementById('bottom-nav');
+                const header = document.getElementById('main-header');
+                
+                if(view === 'auth' || view === 'play' || view === 'result') {
+                    bottomNav.classList.add('hidden');
+                    header.classList.add('hidden');
+                } else {
+                    bottomNav.classList.remove('hidden');
+                    header.classList.remove('hidden');
+                    
+                    document.querySelectorAll('.nav-btn').forEach(btn => btn.className = "nav-btn text-slate-400 flex flex-col items-center gap-1 w-1/4 hover:text-indigo-500");
+                    const activeBtn = document.querySelector(`button[onclick="app.navigate('${view}')"]`);
+                    if(activeBtn) activeBtn.className = "nav-btn text-indigo-600 flex flex-col items-center gap-1 w-1/4 animate-bounce-short";
+                }
+
+                if(view === 'home') this.renderHome();
+                if(view === 'explore') this.renderExplore(); // Render explore but keep current category
+                if(view === 'profile') this.renderProfile();
+                
+                window.scrollTo(0,0);
+            },
+
+            getRank(xp) {
+                let current = this.ranks[0];
+                let next = this.ranks[1];
+                for(let i=0; i<this.ranks.length; i++) {
+                    if(xp >= this.ranks[i].min) {
+                        current = this.ranks[i];
+                        next = this.ranks[i+1] || { min: xp * 1.5, title: "Max" };
+                    }
+                }
+                return { current, next };
+            },
+
+            renderHome() {
+                const { current, next } = this.getRank(this.data.user.xp);
+                document.getElementById('dash-rank').innerText = current.title;
+                document.getElementById('dash-xp').innerText = this.data.user.xp;
+                
+                const range = next.min - current.min;
+                const progress = this.data.user.xp - current.min;
+                const pct = Math.min(100, Math.max(5, (progress / range) * 100));
+                document.getElementById('dash-progress').style.width = `${pct}%`;
+                document.getElementById('dash-next-rank').innerText = `${next.min - this.data.user.xp} XP to ${next.title}`;
+
+                document.getElementById('header-stats').classList.remove('hidden');
+                document.getElementById('header-rank').innerText = current.title;
+                document.getElementById('header-xp').innerText = this.data.user.xp + ' XP';
+
+                const list = document.getElementById('home-quiz-list');
+                list.innerHTML = '';
+                this.data.quizzes.slice(0, 5).forEach(q => {
+                    list.innerHTML += `
+                        <div onclick="app.startQuiz(${q.id})" class="bg-white p-4 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm active:scale-95 transition">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+                                    <i class="fas ${q.category === 'Medical' ? 'fa-heartbeat' : q.category === 'Engineering' ? 'fa-atom' : 'fa-book'}"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-800 text-sm">${q.title}</h4>
+                                    <p class="text-xs text-slate-400">${q.questions.length} Questions</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-right text-slate-300"></i>
+                        </div>
+                    `;
+                });
+            },
+
+            // FIXED: Render Explore based on State
+            renderExplore() {
+                const grid = document.getElementById('explore-grid');
+                grid.innerHTML = '';
+                const term = document.getElementById('search-bar').value.toLowerCase();
+                const cat = this.data.currentCategory; // Use stored category
+
+                // Visual update for buttons
+                document.querySelectorAll('.cat-btn').forEach(btn => {
+                    // Reset to default
+                    btn.className = "cat-btn px-4 py-2 bg-white border text-slate-600 rounded-lg text-sm font-bold transition";
+                });
+                const activeBtn = document.getElementById(`btn-${cat}`);
+                if(activeBtn) {
+                    activeBtn.className = "cat-btn px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-bold transition shadow-md";
+                }
+
+                // Filter Logic
+                const filtered = this.data.quizzes.filter(q => {
+                    const matchSearch = q.title.toLowerCase().includes(term);
+                    const matchCat = cat === 'All' || q.category === cat;
+                    return matchSearch && matchCat;
+                });
+
+                filtered.forEach(q => {
+                    let colors = q.category === 'Medical' ? 'border-red-200 bg-red-50 text-red-600' :
+                                 q.category === 'Engineering' ? 'border-blue-200 bg-blue-50 text-blue-600' :
+                                 'border-slate-200 bg-slate-50 text-slate-600';
+                    
+                    grid.innerHTML += `
+                        <div onclick="app.startQuiz(${q.id})" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 active:scale-95 transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-[10px] font-bold px-2 py-1 rounded border ${colors}">${q.category.toUpperCase()}</span>
+                                <span class="text-xs text-slate-400 font-bold">${q.questions.length} Qs</span>
+                            </div>
+                            <h3 class="font-bold text-lg text-slate-800">${q.title}</h3>
+                        </div>
+                    `;
+                });
+            },
+
+            // FIXED: Filter Category Updates State
+            filterCategory(cat) {
+                this.data.currentCategory = cat;
+                this.navigate('explore');
+                this.renderExplore();
+            },
+
+            renderProfile() {
+                const { current } = this.getRank(this.data.user.xp);
+                document.getElementById('profile-name').innerText = this.data.user.username;
+                document.getElementById('profile-rank').innerText = current.title;
+                document.getElementById('profile-xp').innerText = this.data.user.xp;
+                document.getElementById('profile-games').innerText = this.data.user.gamesPlayed;
+            },
+
+            addQuestionUI() {
+                const c = document.getElementById('questions-container');
+                const idx = c.children.length + 1;
+                const html = `
+                    <div class="q-block bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-xs font-bold text-slate-400 uppercase">Question ${idx}</span>
+                            <button onclick="this.parentElement.parentElement.remove()" class="text-red-400"><i class="fas fa-times"></i></button>
+                        </div>
+                        <input type="text" class="q-txt w-full p-2 border rounded-lg mb-2 text-sm font-bold" placeholder="Question Text">
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            ${[0,1,2,3].map(i=>`<input type="text" class="opt-${i} w-full p-2 border rounded-lg text-xs" placeholder="Option ${i+1}">`).join('')}
+                        </div>
+                        <input type="number" class="q-correct w-full p-2 border rounded-lg text-xs" placeholder="Correct Option (1-4)">
+                    </div>
+                `;
+                c.insertAdjacentHTML('beforeend', html);
+            },
+
+            saveQuiz() {
+                const title = document.getElementById('new-quiz-title').value;
+                const cat = document.getElementById('new-quiz-cat').value;
+                const blocks = document.querySelectorAll('.q-block');
+                if(!title || blocks.length===0) return alert('Incomplete');
+
+                const questions = [];
+                blocks.forEach(b => {
+                    questions.push({
+                        text: b.querySelector('.q-txt').value,
+                        options: [0,1,2,3].map(i => b.querySelector(`.opt-${i}`).value),
+                        correct: parseInt(b.querySelector('.q-correct').value) - 1
+                    });
+                });
+
+                this.data.quizzes.push({ id: Date.now(), title, category: cat, questions });
+                this.save();
+                this.navigate('home');
+            },
+
+            startQuiz(id) {
+                this.data.activeQuiz = this.data.quizzes.find(q => q.id == id);
+                this.data.qIndex = 0;
+                this.data.score = 0;
+                this.navigate('play');
+                this.renderQuestion();
+            },
+
+            renderQuestion() {
+                const q = this.data.activeQuiz.questions[this.data.qIndex];
+                const total = this.data.activeQuiz.questions.length;
+                
+                document.getElementById('play-cat-badge').innerText = this.data.activeQuiz.category;
+                document.getElementById('q-current').innerText = this.data.qIndex + 1;
+                document.getElementById('q-total').innerText = total;
+                document.getElementById('play-progress').style.width = `${((this.data.qIndex+1)/total)*100}%`;
+                document.getElementById('q-text').innerText = q.text;
+
+                const cont = document.getElementById('opt-container');
+                cont.innerHTML = '';
+                q.options.forEach((opt, i) => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full text-left p-4 rounded-xl border-2 border-slate-100 bg-white hover:border-indigo-500 font-bold text-slate-600 transition active:scale-95";
+                    btn.innerText = opt;
+                    btn.onclick = () => this.handleAnswer(i);
+                    cont.appendChild(btn);
+                });
+            },
+
+            handleAnswer(idx) {
+                const correct = this.data.activeQuiz.questions[this.data.qIndex].correct;
+                if(idx === correct) this.data.score++;
+                
+                if(this.data.qIndex < this.data.activeQuiz.questions.length - 1) {
+                    this.data.qIndex++;
+                    this.renderQuestion();
+                } else {
+                    this.finishGame();
+                }
+            },
+
+            finishGame() {
+                const xpEarned = (this.data.score * 10) + 50;
+                this.data.user.xp += xpEarned;
+                this.data.user.gamesPlayed++;
+                this.save();
+
+                document.getElementById('res-score').innerText = `${this.data.score}/${this.data.activeQuiz.questions.length}`;
+                document.getElementById('res-xp').innerText = `+${xpEarned}`;
+                this.navigate('result');
+            }
+        };
+
+        app.init();
+    </script>
+</body>
+</html>
