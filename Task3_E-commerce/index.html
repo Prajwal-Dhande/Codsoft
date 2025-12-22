@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Visionary Shop - Professional</title>
+    
+    <script>
+        window.onerror = function(msg, url, line) {
+            const root = document.getElementById('root');
+            if (root && root.innerHTML === '') {
+                document.body.innerHTML = `<div style="text-align: center; padding: 20px;"><h1>⚠️ Error</h1><p>${msg}</p></div>`;
+            }
+        };
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js" crossorigin></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: { indigo: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' } },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                        'slide-up': 'slideUp 0.5s ease-out forwards',
+                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                        float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .glass-nav { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .dark .glass-nav { background: rgba(17, 24, 39, 0.95); border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .shimmer { background: #f6f7f8; background-image: linear-gradient(to right, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%); background-repeat: no-repeat; background-size: 1000px 100%; animation: shimmer 1.5s infinite linear; }
+        .dark .shimmer { background: #1f2937; background-image: linear-gradient(to right, #1f2937 0%, #374151 20%, #1f2937 40%, #1f2937 100%); }
+        @keyframes shimmer { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
+        /* Zoom Cursor */
+        .zoom-container:hover { cursor: crosshair; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 transition-colors duration-300 antialiased selection:bg-indigo-100 selection:text-indigo-900 pb-20 md:pb-0">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+        
+        // --- ICONS ---
+        const Icons = {
+            Home: ({c}) => <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+            Cart: ({c}) => <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>,
+            Search: ({c}) => <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
+            User: ({c}) => <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+            Heart: ({c, fill}) => <svg className={c} viewBox="0 0 24 24" fill={fill || "none"} stroke="currentColor" strokeWidth="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>,
+            Star: ({c, fill}) => <svg className={c} viewBox="0 0 24 24" fill={fill || "none"} stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+            X: ({c}) => <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
+            Moon: ({c}) => <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>,
+            Sun: ({c}) => <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/></svg>,
+            Package: ({c}) => <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22v-9.75"/></svg>,
+            Arrow: ({c}) => <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>,
+            List: ({c}) => <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
+            Sort: ({c}) => <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg>,
+            Tag: ({c}) => <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><path d="M7 7h.01"/></svg>,
+            Bolt: ({c}) => <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+            Check: ({c}) => <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
+            Share: ({c}) => <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>,
+            ChevronLeft: ({c}) => <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m15 18-6-6 6-6"/></svg>,
+            ChevronRight: ({c}) => <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6"/></svg>
+        };
+
+        const Toast = ({ msg, show }) => (
+            <div className={`fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-3 z-[110] transition-all duration-300 ${show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
+                <div className="bg-green-500 rounded-full p-1"><Icons.Check c="w-3 h-3 text-white"/></div><span className="font-medium text-sm">{msg}</span>
+            </div>
+        );
+
+        // --- ZOOM IMAGE COMPONENT ---
+        const ZoomableImage = ({ src }) => {
+            const [bgPos, setBgPos] = useState('0% 0%');
+            const [zoom, setZoom] = useState(false);
+            const handleMouseMove = (e) => {
+                const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+                const x = (e.clientX - left) / width * 100;
+                const y = (e.clientY - top) / height * 100;
+                setBgPos(`${x}% ${y}%`);
+            };
+            return (
+                <div className="relative w-full h-full overflow-hidden zoom-container" onMouseEnter={()=>setZoom(true)} onMouseLeave={()=>setZoom(false)} onMouseMove={handleMouseMove}>
+                    <img src={src} className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-300 ${zoom ? 'opacity-0' : 'opacity-100'}`} />
+                    <div className={`absolute inset-0 w-full h-full bg-no-repeat bg-white transition-opacity duration-300 ${zoom ? 'opacity-100' : 'opacity-0'}`} style={{backgroundImage:`url(${src})`, backgroundPosition: bgPos, backgroundSize: '200%'}}></div>
+                </div>
+            );
+        };
+
+        const OrderTracker = ({ status }) => {
+            const steps = ['Placed', 'Processing', 'Shipped', 'Delivered'];
+            const currentIdx = steps.indexOf(status);
+            return (
+                <div className="flex items-center justify-between w-full mt-4 relative">
+                    <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gray-200 dark:bg-gray-700 -z-10"></div>
+                    {steps.map((s, i) => (
+                        <div key={s} className="flex flex-col items-center gap-2 bg-white dark:bg-gray-800 px-1">
+                            <div className={`w-3 h-3 rounded-full ${i <= currentIdx ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                            <span className={`text-[10px] ${i <= currentIdx ? 'text-green-600 font-bold' : 'text-gray-400'}`}>{s}</span>
+                        </div>
+                    ))}
+                </div>
+            );
+        };
+
+        const EmptyState = ({ icon: Icon, title, btnAction }) => (
+            <div className="flex flex-col items-center justify-center py-20 text-center animate-slide-up">
+                <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-full mb-6"><Icon c="w-12 h-12 text-gray-400"/></div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{title}</h3>
+                <p className="text-gray-500 mb-8 max-w-xs">Start adding items to see them here.</p>
+                <button onClick={btnAction} className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition-colors">Start Shopping</button>
+            </div>
+        );
+
+        const SkeletonCard = () => (
+            <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700">
+                <div className="pt-[100%] shimmer relative"></div>
+                <div className="p-3 space-y-2">
+                    <div className="h-3 w-1/3 rounded shimmer"></div>
+                    <div className="h-4 w-3/4 rounded shimmer"></div>
+                    <div className="h-4 w-1/2 rounded shimmer"></div>
+                </div>
+            </div>
+        );
+
+        const HeroCarousel = ({ featuredProducts }) => {
+            const [slide, setSlide] = useState(0);
+            const [touchStart, setTouchStart] = useState(null);
+            const [touchEnd, setTouchEnd] = useState(null);
+
+            // Manual Navigation
+            const nextSlide = () => setSlide(prev => (prev + 1) % featuredProducts.length);
+            const prevSlide = () => setSlide(prev => (prev - 1 + featuredProducts.length) % featuredProducts.length);
+            const goToSlide = (i) => setSlide(i);
+
+            // Swipe Handlers
+            const minSwipeDistance = 50;
+            const onTouchStart = (e) => { setTouchEnd(null); setTouchStart(e.targetTouches[0].clientX); };
+            const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
+            const onTouchEnd = () => {
+                if (!touchStart || !touchEnd) return;
+                const distance = touchStart - touchEnd;
+                const isLeftSwipe = distance > minSwipeDistance;
+                const isRightSwipe = distance < -minSwipeDistance;
+                if (isLeftSwipe) nextSlide();
+                if (isRightSwipe) prevSlide();
+            };
+
+            // Auto-play (resets timer when slide changes manually or automatically)
+            useEffect(() => {
+                if(!featuredProducts.length) return;
+                const i = setInterval(nextSlide, 4000);
+                return () => clearInterval(i);
+            }, [featuredProducts, slide]); 
+
+            if (!featuredProducts.length) return <div className="h-64 md:h-96 w-full max-w-6xl mx-auto rounded-3xl shimmer mt-20 mb-4"></div>;
+            
+            const p = featuredProducts[slide];
+
+            return (
+                <div className="pt-6 md:pt-24 pb-4 px-4 animate-fade-in group/hero">
+                    <div 
+                        onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
+                        className="max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden min-h-auto md:min-h-[400px] flex flex-col md:flex-row relative"
+                    >
+                        {/* Manual Controls - FIXED: Always visible on mobile, Hover on desktop */}
+                        <button onClick={prevSlide} className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur p-2 rounded-full shadow-lg opacity-100 md:opacity-0 md:group-hover/hero:opacity-100 transition-opacity hover:scale-110">
+                            <Icons.ChevronLeft c="w-6 h-6 text-gray-800 dark:text-white"/>
+                        </button>
+                        <button onClick={nextSlide} className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur p-2 rounded-full shadow-lg opacity-100 md:opacity-0 md:group-hover/hero:opacity-100 transition-opacity hover:scale-110">
+                            <Icons.ChevronRight c="w-6 h-6 text-gray-800 dark:text-white"/>
+                        </button>
+
+                        <div className="md:w-1/2 p-6 md:p-12 flex flex-col justify-center relative z-10 order-2 md:order-1 text-center md:text-left">
+                            <span className="inline-block px-3 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-bold tracking-wider mb-2 w-fit mx-auto md:mx-0">TRENDING</span>
+                            <h1 key={`title-${slide}`} className="text-2xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-2 leading-tight line-clamp-2 animate-fade-in">{p.name}</h1>
+                            <p key={`desc-${slide}`} className="text-gray-500 dark:text-gray-400 text-sm md:text-lg mb-6 line-clamp-2 animate-fade-in">{p.desc}</p>
+                            <div className="flex items-center justify-center md:justify-start gap-4">
+                                <button onClick={() => document.getElementById('shop').scrollIntoView({behavior:'smooth'})} className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-lg hover:shadow-indigo-500/30 transition-all">Shop Now</button>
+                                <span className="text-2xl font-bold text-gray-900 dark:text-white">{p.priceStr}</span>
+                            </div>
+                        </div>
+                        
+                        <div className="md:w-1/2 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-700 dark:to-gray-800 flex items-center justify-center p-6 order-1 md:order-2 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl"></div>
+                            <img key={slide} src={p.img} className="w-60 md:w-80 object-contain animate-float drop-shadow-2xl relative z-10"/>
+                        </div>
+
+                        {/* Dots Indicator */}
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                            {featuredProducts.map((_, idx) => (
+                                <button 
+                                    key={idx} 
+                                    onClick={() => goToSlide(idx)}
+                                    className={`h-2 rounded-full transition-all duration-300 ${slide === idx ? 'w-8 bg-indigo-600' : 'w-2 bg-gray-300 dark:bg-gray-600 hover:bg-indigo-400'}`}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const Footer = () => (
+            <footer className="bg-gray-100 dark:bg-gray-900 border-t dark:border-gray-800 pt-10 pb-24 md:pb-10 mt-auto">
+                <div className="max-w-7xl mx-auto px-4 text-center">
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                        <div className="bg-indigo-600 p-1.5 rounded-lg text-white"><Icons.Package c="w-6 h-6"/></div>
+                        <span className="text-xl font-bold dark:text-white">Visionary</span>
+                    </div>
+                    <p className="text-sm text-gray-500">© 2025 Visionary Shop. Premium Experience.</p>
+                </div>
+            </footer>
+        );
+
+        function App() {
+            // --- STATE ---
+            const [cart, setCart] = useState(() => JSON.parse(localStorage.getItem('visionary_cart') || '[]'));
+            const [wishlist, setWishlist] = useState(() => JSON.parse(localStorage.getItem('visionary_wishlist') || '[]'));
+            const [orders, setOrders] = useState(() => JSON.parse(localStorage.getItem('visionary_orders') || '[]'));
+            const [user, setUser] = useState(() => localStorage.getItem('visionary_user') || null);
+            const [darkMode, setDarkMode] = useState(() => localStorage.getItem('visionary_theme') === 'dark');
+            const [savedAddr, setSavedAddr] = useState(() => JSON.parse(localStorage.getItem('visionary_addr') || '{"name":"","address":""}'));
+            const [recentlyViewed, setRecentlyViewed] = useState(() => JSON.parse(localStorage.getItem('visionary_recent') || '[]'));
+
+            const [products, setProducts] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [page, setPage] = useState('home');
+            const [search, setSearch] = useState('');
+            const [cat, setCat] = useState('All');
+            const [sort, setSort] = useState('default');
+            const [modal, setModal] = useState(null);
+            const [modalTab, setModalTab] = useState('details'); 
+            const [toast, setToast] = useState({ show: false, msg: '' });
+            
+            const [checkoutData, setCheckoutData] = useState({ ...savedAddr, card: '', coupon: '' });
+            const [discount, setDiscount] = useState(0);
+            
+            // --- EFFECTS ---
+            useEffect(() => { localStorage.setItem('visionary_cart', JSON.stringify(cart)); }, [cart]);
+            useEffect(() => { localStorage.setItem('visionary_wishlist', JSON.stringify(wishlist)); }, [wishlist]);
+            useEffect(() => { localStorage.setItem('visionary_orders', JSON.stringify(orders)); }, [orders]);
+            useEffect(() => { localStorage.setItem('visionary_user', user || ''); }, [user]);
+            useEffect(() => { localStorage.setItem('visionary_recent', JSON.stringify(recentlyViewed)); }, [recentlyViewed]);
+            useEffect(() => { localStorage.setItem('visionary_addr', JSON.stringify({name: checkoutData.name, address: checkoutData.address})); }, [checkoutData.name, checkoutData.address]);
+            useEffect(() => { 
+                document.documentElement.className = darkMode ? 'dark' : '';
+                localStorage.setItem('visionary_theme', darkMode ? 'dark' : 'light');
+            }, [darkMode]);
+
+            useEffect(() => {
+                const init = async () => {
+                    try {
+                        const res = await fetch('https://fakestoreapi.com/products');
+                        const data = await res.json();
+                        setProducts(data.map(i => ({
+                            id: i.id,
+                            name: i.title, 
+                            price: Math.round(i.price * 85),
+                            priceStr: `₹${Math.round(i.price * 85).toLocaleString()}`,
+                            category: i.category,
+                            rating: i.rating.rate,
+                            reviewCount: i.rating.count,
+                            img: i.image,
+                            desc: i.description,
+                            specs: { "Material": "Premium", "Warranty": "1 Year", "Origin": "Imported" },
+                            originalPrice: `₹${Math.round(i.price * 85 * 1.2).toLocaleString()}`,
+                            discount: '20% OFF',
+                            reviews: [
+                                { user: "Amit R.", text: "Great quality for the price!", rating: 5 },
+                                { user: "Sara K.", text: "Fast delivery, loved it.", rating: 4 },
+                                { user: "Rahul M.", text: "Decent, but color varies slightly.", rating: 3 }
+                            ]
+                        })));
+                    } catch(e) { console.error(e); } finally { setLoading(false); }
+                };
+                init();
+            }, []);
+
+            const showToast = (msg) => { setToast({ show: true, msg }); setTimeout(() => setToast({ show: false, msg: '' }), 2500); };
+            
+            const addToCart = (p) => {
+                setCart(prev => {
+                    const ex = prev.find(i => i.id === p.id);
+                    return ex ? prev.map(i => i.id === p.id ? {...i, qty: i.qty+1} : i) : [...prev, {...p, qty: 1}];
+                });
+                showToast("Added to Cart");
+            };
+
+            const toggleWishlist = (p, e) => {
+                if (e && e.stopPropagation) e.stopPropagation();
+                setWishlist(prev => {
+                    const exist = prev.find(i => i.id === p.id);
+                    if (exist) { showToast("Removed from Wishlist"); return prev.filter(i => i.id !== p.id); } 
+                    else { showToast("Added to Wishlist"); return [...prev, p]; }
+                });
+            };
+
+            const openModal = (p) => {
+                setModal(p);
+                setModalTab('details');
+                setRecentlyViewed(prev => {
+                    const filtered = prev.filter(i => i.id !== p.id);
+                    return [p, ...filtered].slice(0, 4); 
+                });
+            };
+
+            const shareProduct = () => {
+                const text = `Check out this amazing ${modal.name} on Visionary Shop! Price: ${modal.priceStr}`;
+                navigator.clipboard.writeText(text);
+                showToast("Link Copied!");
+            };
+
+            const buyNow = (p) => {
+                addToCart(p);
+                setPage('checkout');
+            };
+
+            const handleCheckout = (e) => {
+                e.preventDefault();
+                const total = cart.reduce((a,b) => a + (b.price*b.qty), 0) * (1-discount);
+                setOrders([{ id: 'ORD-'+Date.now(), date: new Date().toLocaleDateString(), items: cart, total, status: 'Processing' }, ...orders]);
+                setCart([]);
+                setDiscount(0);
+                setPage('orders');
+                showToast("Order Placed Successfully!");
+            };
+
+            const filtered = useMemo(() => {
+                let res = products.filter(p => (cat === 'All' || p.category.toLowerCase() === cat.toLowerCase()) && p.name.toLowerCase().includes(search.toLowerCase()));
+                if(sort === 'low') res.sort((a,b) => a.price - b.price);
+                if(sort === 'high') res.sort((a,b) => b.price - a.price);
+                if(sort === 'top') res.sort((a,b) => b.rating - a.rating);
+                return res;
+            }, [products, cat, search, sort]);
+
+            const categories = ['All', ...new Set(products.map(p => p.category))];
+            const isFormValid = checkoutData.name.trim() !== '' && checkoutData.address.trim() !== '' && checkoutData.card.trim() !== '';
+
+            const totalSpent = orders.reduce((acc, order) => acc + order.total, 0);
+            const totalOrders = orders.length;
+
+            return (
+                <div className={`min-h-screen flex flex-col ${darkMode ? 'dark bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
+                    {/* NAV */}
+                    <nav className="glass-nav fixed top-0 w-full z-40 px-4 h-16 flex items-center justify-between shadow-sm">
+                        <div onClick={() => setPage('home')} className="flex items-center gap-2 cursor-pointer">
+                            <div className="bg-indigo-600 p-1 rounded text-white"><Icons.Package c="w-5 h-5"/></div>
+                            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">Visionary</h1>
+                        </div>
+                        {/* IMPROVED SEARCH BAR */}
+                        <div className="hidden md:flex flex-1 max-w-md mx-4 relative group">
+                            <input 
+                                value={search} 
+                                onChange={e=>setSearch(e.target.value)} 
+                                placeholder="Search products..." 
+                                className="w-full bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-full py-2 pl-10 pr-4 text-sm outline-none focus:bg-white dark:focus:bg-gray-800 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-300"
+                            />
+                            <Icons.Search c="absolute left-3 top-2.5 w-4 h-4 text-gray-400 group-focus-within:text-indigo-500 transition-colors"/>
+                        </div>
+                        <div className="flex gap-4 items-center">
+                            <button onClick={() => setDarkMode(!darkMode)}>{darkMode ? <Icons.Sun c="w-5 h-5"/> : <Icons.Moon c="w-5 h-5"/>}</button>
+                            <button onClick={() => setPage(user ? 'profile' : 'orders')} className="hidden md:flex items-center gap-1 text-sm font-medium hover:text-indigo-600"><Icons.User c="w-5 h-5"/> Profile</button>
+                            <button onClick={() => setPage('cart')} className="relative hidden md:block group">
+                                <Icons.Cart c="w-6 h-6 group-hover:text-indigo-600"/>
+                                {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">{cart.length}</span>}
+                            </button>
+                        </div>
+                    </nav>
+
+                    {/* MOBILE SEARCH - Fixed Positioning & Design */}
+                    <div className="md:hidden pt-20 px-4 pb-2">
+                        <div className="relative group">
+                            <input 
+                                value={search} 
+                                onChange={e=>setSearch(e.target.value)} 
+                                placeholder="Search products..." 
+                                className="w-full bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 rounded-xl py-3 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                            />
+                            <Icons.Search c="absolute left-3 top-3.5 w-4 h-4 text-gray-400 group-focus-within:text-indigo-500 transition-colors"/>
+                        </div>
+                    </div>
+
+                    <main className={`flex-1 ${page !== 'home' ? 'pt-20 md:pt-24' : ''}`}>
+                        {page === 'home' && (
+                            <div className="px-4 pb-12 max-w-7xl mx-auto">
+                                <HeroCarousel featuredProducts={products.slice(0,5)} />
+                                <div id="shop" className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center sticky top-16 bg-gray-50 dark:bg-gray-900 z-10 py-4 transition-colors">
+                                    <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar w-full md:w-auto">
+                                        {categories.map(c => (
+                                            <button key={c} onClick={() => setCat(c)} className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${cat === c ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-gray-800 border dark:border-gray-700'}`}>{c.charAt(0).toUpperCase() + c.slice(1)}</button>
+                                        ))}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Icons.Sort c="w-4 h-4 text-gray-500"/>
+                                        <select onChange={(e) => setSort(e.target.value)} className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg text-sm p-2 outline-none">
+                                            <option value="default">Featured</option>
+                                            <option value="low">Price: Low to High</option>
+                                            <option value="high">Price: High to Low</option>
+                                            <option value="top">Top Rated</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                {loading ? <div className="grid grid-cols-2 md:grid-cols-4 gap-4">{[...Array(8)].map((_,i)=><SkeletonCard key={i}/>)}</div> : (
+                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
+                                        {filtered.map(p => (
+                                            <div key={p.id} onClick={() => openModal(p)} className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700 relative active:scale-95 transition-transform duration-200 group cursor-pointer">
+                                                <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded z-10">{p.discount}</div>
+                                                <div className="relative pt-[100%] bg-white p-4">
+                                                    <img src={p.img} className="absolute inset-0 w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-500"/>
+                                                    <button onClick={(e) => { e.stopPropagation(); toggleWishlist(p, e); }} className="absolute top-2 right-2 p-1.5 bg-white/80 backdrop-blur rounded-full shadow-sm z-20 hover:bg-white transition-colors group/heart">
+                                                        <div className="pointer-events-none"><Icons.Heart c={`w-4 h-4 ${wishlist.find(i=>i.id===p.id) ? 'text-red-500' : 'text-gray-400'}`} fill={wishlist.find(i=>i.id===p.id) ? "currentColor" : "none"} /></div>
+                                                    </button>
+                                                    <button onClick={(e) => { e.stopPropagation(); addToCart(p); }} className="absolute bottom-2 right-2 bg-indigo-600 text-white p-2 rounded-full shadow-lg md:hidden"><Icons.Cart c="w-4 h-4"/></button>
+                                                </div>
+                                                <div className="p-3">
+                                                    <div className="text-[10px] uppercase font-bold text-indigo-600 mb-1">{p.category}</div>
+                                                    <h3 className="text-sm font-medium truncate mb-1">{p.name}</h3>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-bold text-sm">{p.priceStr}</span>
+                                                        <span className="text-[10px] text-gray-400 line-through">{p.originalPrice}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                {/* Recently Viewed Section */}
+                                {recentlyViewed.length > 0 && (
+                                    <div className="mt-12">
+                                        <h3 className="text-xl font-bold mb-4 dark:text-white">Recently Viewed</h3>
+                                        <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+                                            {recentlyViewed.map(rp => (
+                                                <div key={rp.id} onClick={() => openModal(rp)} className="min-w-[140px] bg-white dark:bg-gray-800 p-2 rounded-xl border border-gray-100 dark:border-gray-700 cursor-pointer">
+                                                    <img src={rp.img} className="w-full h-32 object-contain bg-white rounded-lg mb-2"/>
+                                                    <p className="text-xs font-medium truncate text-gray-900 dark:text-white">{rp.name}</p>
+                                                    <p className="text-xs font-bold text-indigo-600">{rp.priceStr}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {page === 'cart' && (
+                            <div className="px-4 pb-48 max-w-2xl mx-auto animate-slide-up">
+                                <h2 className="text-2xl font-bold mb-6">Cart ({cart.length})</h2>
+                                {cart.length === 0 ? <EmptyState icon={Icons.Cart} title="Your cart is empty" btnAction={() => setPage('home')}/> : (
+                                    <div className="space-y-4">
+                                        {cart.map(item => (
+                                            <div key={item.id} className="bg-white dark:bg-gray-800 p-3 rounded-xl flex gap-3 shadow-sm border dark:border-gray-700">
+                                                <img src={item.img} className="w-16 h-16 shrink-0 object-contain bg-white rounded-lg p-1"/>
+                                                <div className="flex-1 min-w-0">
+                                                    <h3 className="font-medium text-sm truncate">{item.name || item.title}</h3>
+                                                    <p className="text-indigo-600 font-bold mt-1">{item.priceStr}</p>
+                                                    <div className="flex items-center gap-3 mt-2">
+                                                        <button onClick={() => setCart(c => c.map(i => i.id === item.id ? {...i, qty: Math.max(1, i.qty-1)} : i))} className="w-6 h-6 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-center">-</button>
+                                                        <span className="text-sm">{item.qty}</span>
+                                                        <button onClick={() => setCart(c => c.map(i => i.id === item.id ? {...i, qty: i.qty+1} : i))} className="w-6 h-6 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-center">+</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                {cart.length > 0 && (
+                                    <div className="fixed bottom-[60px] left-0 w-full p-4 bg-white dark:bg-gray-900 border-t dark:border-gray-800 md:relative md:bottom-0 z-40">
+                                        <div className="flex justify-between text-lg font-bold mb-3"><span>Total</span><span>₹{cart.reduce((a,b) => a + (b.price*b.qty), 0).toLocaleString()}</span></div>
+                                        <button onClick={() => setPage('checkout')} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg">Proceed to Checkout</button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {page === 'checkout' && (
+                            <div className="px-4 pb-24 max-w-lg mx-auto animate-slide-up">
+                                <button onClick={() => setPage('cart')} className="mb-6 flex items-center gap-2 text-sm text-gray-500 hover:text-indigo-600"><Icons.Arrow c="w-4 h-4 rotate-180"/> Back</button>
+                                <h2 className="text-2xl font-bold mb-6">Checkout</h2>
+                                <form onSubmit={handleCheckout} className="space-y-4">
+                                    <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 space-y-4">
+                                        <h3 className="font-bold flex items-center gap-2"><Icons.User c="w-5 h-5"/> Shipping</h3>
+                                        <input required placeholder="Name" className="w-full p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border dark:border-gray-700 outline-none" value={checkoutData.name} onChange={e=>setCheckoutData({...checkoutData, name: e.target.value})}/>
+                                        <input required placeholder="Address" className="w-full p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border dark:border-gray-700 outline-none" value={checkoutData.address} onChange={e=>setCheckoutData({...checkoutData, address: e.target.value})}/>
+                                        <input required placeholder="Card Number" className="w-full p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border dark:border-gray-700 outline-none" value={checkoutData.card} onChange={e=>setCheckoutData({...checkoutData, card: e.target.value})}/>
+                                    </div>
+                                    <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 space-y-2">
+                                        <h3 className="font-bold flex items-center gap-2"><Icons.Tag c="w-5 h-5"/> Coupon</h3>
+                                        <div className="flex gap-2">
+                                            <input placeholder="Ex: SAVE20" className="flex-1 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border dark:border-gray-700 outline-none uppercase" value={checkoutData.coupon} onChange={e=>setCheckoutData({...checkoutData, coupon: e.target.value})}/>
+                                            <button type="button" onClick={() => checkoutData.coupon==='SAVE20' ? (setDiscount(0.2), showToast("20% OFF Applied!")) : showToast("Invalid Code")} className="bg-gray-900 dark:bg-gray-700 text-white px-4 rounded-lg font-bold">Apply</button>
+                                        </div>
+                                    </div>
+                                    <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                                        <div className="flex justify-between mb-2 text-green-500 text-sm"><span>Discount</span><span>- {(discount * 100)}%</span></div>
+                                        <div className="flex justify-between font-bold text-lg border-t pt-2 dark:border-gray-700"><span>Total</span><span>₹{(cart.reduce((a,b) => a + (b.price*b.qty), 0) * (1-discount)).toLocaleString()}</span></div>
+                                    </div>
+                                    <button type="submit" disabled={!isFormValid} className={`w-full text-white py-4 rounded-xl font-bold shadow-xl transition-opacity ${!isFormValid ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600'}`}>Place Order</button>
+                                </form>
+                            </div>
+                        )}
+
+                        {(page === 'orders' || page === 'profile') && (
+                            user ? (
+                                <div className="px-4 pb-24 max-w-2xl mx-auto animate-slide-up">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h2 className="text-2xl font-bold">My Profile</h2>
+                                        <button onClick={() => {setUser(null); setPage('home');}} className="text-red-500 text-sm font-bold">Logout</button>
+                                    </div>
+                                    
+                                    {/* Dashboard Stats */}
+                                    <div className="grid grid-cols-2 gap-4 mb-8">
+                                        <div className="bg-indigo-50 dark:bg-indigo-900/50 p-4 rounded-xl text-center">
+                                            <p className="text-xs text-indigo-500 dark:text-indigo-300 font-bold uppercase">Total Spent</p>
+                                            <p className="text-2xl font-bold text-indigo-900 dark:text-white">₹{totalSpent.toLocaleString()}</p>
+                                        </div>
+                                        <div className="bg-green-50 dark:bg-green-900/50 p-4 rounded-xl text-center">
+                                            <p className="text-xs text-green-600 dark:text-green-300 font-bold uppercase">Total Orders</p>
+                                            <p className="text-2xl font-bold text-green-900 dark:text-white">{totalOrders}</p>
+                                        </div>
+                                    </div>
+
+                                    <h3 className="font-bold text-lg mb-4">Order History</h3>
+                                    {orders.length === 0 ? <EmptyState icon={Icons.List} title="No orders yet" btnAction={() => setPage('home')}/> : orders.map(o => (
+                                        <div key={o.id} className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 mb-4">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <div><p className="font-bold text-sm">#{o.id}</p><p className="text-xs text-gray-400">{o.date}</p></div>
+                                                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">{o.status}</span>
+                                            </div>
+                                            <OrderTracker status={o.status} />
+                                            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar mt-4">{o.items.map((i,x)=><img key={x} src={i.img} className="w-12 h-12 rounded-lg border dark:border-gray-700 object-contain bg-white"/>)}</div>
+                                            <div className="flex justify-between items-center mt-3 pt-3 border-t dark:border-gray-700"><span className="text-sm text-gray-500">Total</span><span className="font-bold">₹{Math.round(o.total).toLocaleString()}</span></div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="px-4 pb-24 pt-10 max-w-md mx-auto animate-slide-up flex flex-col items-center">
+                                    <div className="bg-indigo-100 dark:bg-indigo-900 p-4 rounded-full mb-4"><Icons.User c="w-8 h-8 text-indigo-600"/></div>
+                                    <h2 className="text-2xl font-bold mb-2">Login Required</h2>
+                                    <p className="text-gray-500 mb-8 text-center">Track your orders and history.</p>
+                                    <button onClick={() => {setUser("User"); showToast("Logged In");}} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold">Login as Guest</button>
+                                </div>
+                            )
+                        )}
+
+                        {page === 'wishlist' && (
+                            <div className="px-4 pb-24 max-w-2xl mx-auto animate-slide-up">
+                                <h2 className="text-2xl font-bold mb-6">Wishlist</h2>
+                                {wishlist.length === 0 ? <EmptyState icon={Icons.Heart} title="Wishlist is empty" btnAction={() => setPage('home')}/> : (
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {wishlist.map(p => (
+                                            <div key={p.id} className="bg-white dark:bg-gray-800 p-3 rounded-xl border dark:border-gray-700 relative">
+                                                <img src={p.img} className="w-full h-32 object-contain bg-white rounded-lg mb-2"/>
+                                                <h3 className="font-medium text-sm truncate">{p.name || p.title}</h3>
+                                                <p className="text-indigo-600 font-bold text-sm">{p.priceStr}</p>
+                                                <button onClick={() => addToCart(p)} className="mt-2 w-full bg-gray-100 dark:bg-gray-700 text-xs py-2 rounded-lg font-medium">Add to Cart</button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </main>
+
+                    <Footer />
+
+                    <div className="md:hidden fixed bottom-0 left-0 w-full bg-white dark:bg-gray-900 border-t dark:border-gray-800 pb-safe z-50 flex justify-around items-center h-16 shadow-[0_-5px_10px_rgba(0,0,0,0.02)]">
+                        <button onClick={() => setPage('home')} className={`flex flex-col items-center gap-1 ${page==='home'?'text-indigo-600':'text-gray-400'}`}><Icons.Home c="w-6 h-6"/><span className="text-[10px]">Home</span></button>
+                        <button onClick={() => setPage('wishlist')} className={`flex flex-col items-center gap-1 ${page==='wishlist'?'text-indigo-600':'text-gray-400'}`}><Icons.Heart c="w-6 h-6"/><span className="text-[10px]">Saved</span></button>
+                        <button onClick={() => setPage('profile')} className={`flex flex-col items-center gap-1 ${page==='profile'?'text-indigo-600':'text-gray-400'}`}><Icons.User c="w-6 h-6"/><span className="text-[10px]">Profile</span></button>
+                        <button onClick={() => setPage('cart')} className={`flex flex-col items-center gap-1 relative ${page==='cart'?'text-indigo-600':'text-gray-400'}`}>
+                            <div className="relative"><Icons.Cart c="w-6 h-6"/>{cart.length>0 && <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full">{cart.length}</span>}</div><span className="text-[10px]">Cart</span>
+                        </button>
+                    </div>
+
+                    {modal && (
+                        <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center" onClick={() => setModal(null)}>
+                            <div onClick={e => e.stopPropagation()} className="bg-white dark:bg-gray-900 w-full md:w-[600px] h-[90vh] md:h-auto rounded-t-3xl md:rounded-2xl overflow-hidden flex flex-col animate-slide-up shadow-2xl">
+                                <div className="h-64 bg-white relative shrink-0 p-6 flex items-center justify-center">
+                                    <ZoomableImage src={modal.img} />
+                                    <button onClick={() => setModal(null)} className="absolute top-4 right-4 bg-gray-100 p-2 rounded-full z-10"><Icons.X c="w-5 h-5"/></button>
+                                </div>
+                                <div className="p-6 overflow-y-auto flex-1">
+                                    <h2 className="text-xl font-bold mb-1 leading-tight">{modal.name}</h2>
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <p className="text-2xl font-bold text-indigo-600">{modal.priceStr}</p>
+                                        <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded">20% OFF</span>
+                                    </div>
+                                    <div className="flex gap-4 border-b dark:border-gray-700 mb-4">
+                                        <button onClick={() => setModalTab('details')} className={`pb-2 text-sm font-bold ${modalTab === 'details' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-400'}`}>Details</button>
+                                        <button onClick={() => setModalTab('reviews')} className={`pb-2 text-sm font-bold ${modalTab === 'reviews' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-400'}`}>Reviews ({modal.reviewCount})</button>
+                                    </div>
+                                    {modalTab === 'details' ? (
+                                        <div className="space-y-4">
+                                            <p className="text-sm text-gray-500 leading-relaxed">{modal.desc}</p>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                {Object.entries(modal.specs).map(([k,v]) => (
+                                                    <div key={k} className="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl"><p className="text-[10px] font-bold text-gray-400 uppercase">{k}</p><p className="text-xs font-medium">{v}</p></div>
+                                                ))}
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button onClick={shareProduct} className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                                                    <Icons.Share c="w-4 h-4"/> Share
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {modal.reviews.map((r,i) => (
+                                                <div key={i} className="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl">
+                                                    <div className="flex justify-between text-xs mb-1"><span className="font-bold">{r.user}</span><span className="text-yellow-500">★ {r.rating}.0</span></div>
+                                                    <p className="text-xs text-gray-600 dark:text-gray-300">{r.text}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="p-4 border-t dark:border-gray-800 flex gap-3">
+                                    <button onClick={() => { toggleWishlist(modal, {stopPropagation:()=>{}}); }} className="p-3 border rounded-xl dark:border-gray-700"><Icons.Heart c="w-6 h-6 text-red-500" fill={wishlist.find(i=>i.id===modal.id) ? "currentColor" : "none"}/></button>
+                                    <button onClick={() => { addToCart(modal); setModal(null); }} className="flex-1 bg-gray-100 dark:bg-gray-800 text-indigo-600 font-bold rounded-xl py-3">Add to Cart</button>
+                                    <button onClick={() => { buyNow(modal); setModal(null); }} className="flex-1 bg-indigo-600 text-white font-bold rounded-xl py-3 shadow-lg">Buy Now</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    <Toast show={toast.show} msg={toast.msg} />
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
+
